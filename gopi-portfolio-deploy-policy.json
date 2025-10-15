@@ -4,40 +4,38 @@
     {
       "Effect": "Allow",
       "Action": [
-        "ecr:GetAuthorizationToken",
-        "ecr:BatchCheckLayerAvailability",
-        "ecr:CompleteLayerUpload",
-        "ecr:GetDownloadUrlForLayer",
-        "ecr:InitiateLayerUpload",
-        "ecr:PutImage",
-        "ecr:UploadLayerPart"
-      ],
-      "Resource": "*"
-    },
-    {
-      "Effect": "Allow",
-      "Action": [
         "ecs:DescribeServices",
         "ecs:DescribeTaskDefinition",
         "ecs:DescribeTasks",
         "ecs:ListClusters",
-        "ecs:ListTasks",
+        "ecs:ListServices",
         "ecs:RegisterTaskDefinition",
-        "ecs:UpdateService"
+        "ecs:UpdateService",
+        "ecs:RunTask",
+        "iam:PassRole"
       ],
       "Resource": "*"
     },
     {
       "Effect": "Allow",
       "Action": [
-        "iam:PassRole"
+        "ecr:GetAuthorizationToken",
+        "ecr:BatchCheckLayerAvailability",
+        "ecr:GetDownloadUrlForLayer",
+        "ecr:PutImage",
+        "ecr:InitiateLayerUpload",
+        "ecr:UploadLayerPart",
+        "ecr:CompleteLayerUpload"
       ],
-      "Resource": "*",
-      "Condition": {
-        "StringEqualsIfExists": {
-          "iam:PassedToService": "ecs-tasks.amazonaws.com"
-        }
-      }
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogStream",
+        "logs:PutLogEvents"
+      ],
+      "Resource": "*"
     }
   ]
 }
