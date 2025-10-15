@@ -2,49 +2,61 @@ name: 🚀 Deploy Portfolio to Amazon ECS
 
 on:
   push:
-    branches: [ main, master ]
+    branches:
+      - main
+      - master
 
 permissions:
   contents: read
   id-token: write
 
 env:
-  AWS_REGION: ap-south-1
-  ECR_REPOSITORY: gopi-portfolio
-  ECS_CLUSTER: gopi-portfolio-cluster
-  ECS_SERVICE: gopi-portfolio-service
-  ECS_TASK_DEFINITION: .aws/task-definition.json
-  CONTAINER_NAME: gopi-portfolio-container
+  AWS_REGION: ap-south-1                      # Your AWS region
+  ECR_REPOSITORY: gopi-portfolio              # Your ECR repository name
+  ECS_CLUSTER: gopi-portfolio-cluster         # Your ECS cluster name
+  ECS_SERVICE: gopi-portfolio-service         # Your ECS service name
+  ECS_TASK_DEFINITION: .aws/task-definition.json  # Path to ECS task definition JSON
+  CONTAINER_NAME: gopi-portfolio-container    # Container name inside task definition
 
 jobs:
   deploy:
+    name: Deploy to Amazon ECS
     runs-on: ubuntu-latest
+    environment: production
+
     steps:
-      - name: 🧭 Checkout code
+      # 🧭 Step 1: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: ⚙️ Configure AWS credentials
+      # ⚙️ Step 2: Configure AWS credentials (using Secrets from GitHub)
+      - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v3
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: 🔐 Login to Amazon ECR
+      # 🔐 Step 3: Login to Amazon ECR
+      - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: 🐳 Build and push Docker image
+      # 🐳 Step 4: Build and push Docker image to ECR
+      - name: Build, tag, and push Docker image
         id: build-image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
+          echo "🚧 Building Docker image..."
           docker build -t $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG .
+          echo "📦 Pushing image to ECR..."
           docker push $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG
           echo "image=$ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
-      - name: 🧩 Render ECS task definition
+      # 🧩 Step 5: Render ECS task definition with new image
+      - name: Render ECS task definition
         id: render-task-def
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
@@ -52,7 +64,8 @@ jobs:
           container-name: ${{ env.CONTAINER_NAME }}
           image: ${{ steps.build-image.outputs.image }}
 
-      - name: 🚀 Deploy to ECS
+      # 🚀 Step 6: Deploy updated task definition to ECS
+      - name: Deploy to Amazon ECS
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
           task-definition: ${{ steps.render-task-def.outputs.task-definition }}
