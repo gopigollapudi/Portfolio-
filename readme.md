@@ -61,9 +61,7 @@
 This repository contains the personal portfolio website of **Gopi Gollapudi**, highlighting education, certifications, projects, and cybersecurity expertise.  
 It features responsive design, animations, and an interactive cyber-themed interface.
 
-![Cyber Banner](https://blogger.googleusercontent.com/img/a/AVvXsEiYcHlxDubGLMAT5Y7GTCxiv9uDHo2882ko_EgmaLZnXGz66i2PUX5mJBk_qT_bJ57TjoigTEeue0fBBOP6h-oBQT4c4DGuTijyYDMzg2oDM-PNwVwV9w084p44edL6OUy8Ovyq-yF6GeXHuwnkyUnMDT__s2GeWAvzGeM5bpwfpZF_rNz3TtxVeoXjSKzL)
-
----
+![Cyber Banner]
 
 ## 🧩 Technologies Used
 ![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)
