@@ -1,67 +1,65 @@
-name: Deploy Gopi Portfolio to Amazon ECS
+name: 🚀 Deploy Portfolio to AWS ECS
 
 on:
   push:
     branches:
       - main
-      - master  # triggers on either branch
-
-env:
-  AWS_REGION: ap-south-1                          # 🌍 Example: Mumbai region — change if different
-  ECR_REPOSITORY: gopi-portfolio                  # 🐳 Your ECR repo name
-  ECS_SERVICE: gopi-portfolio-service             # ⚙️ Your ECS service name
-  ECS_CLUSTER: gopi-portfolio-cluster             # ☁️ Your ECS cluster name
-  ECS_TASK_DEFINITION: .aws/task-definition.json  # 📄 Path to your ECS task definition JSON file
-  CONTAINER_NAME: gopi-portfolio-container        # 🧩 Container name in your ECS task definition
+      - master
 
 permissions:
   contents: read
+  id-token: write   # required for OpenID Connect authentication with AWS
+
+env:
+  AWS_REGION: ap-south-1                   # 🔹 your AWS region
+  ECR_REPOSITORY: gopi-portfolio           # 🔹 your ECR repository name
+  ECS_CLUSTER: gopi-portfolio-cluster      # 🔹 your ECS cluster name
+  ECS_SERVICE: gopi-portfolio-service      # 🔹 your ECS service name
+  ECS_TASK_DEFINITION: .aws/task-definition.json  # 🔹 path to task definition file
+  CONTAINER_NAME: gopi-portfolio-container # 🔹 container name from task definition
 
 jobs:
   deploy:
-    name: Deploy Portfolio Website
+    name: Deploy to Amazon ECS
     runs-on: ubuntu-latest
     environment: production
 
     steps:
-      - name: Checkout Code
+      - name: 🧭 Checkout repository
         uses: actions/checkout@v4
 
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v2
+      - name: ⚙️ Configure AWS Credentials (v3)
+        uses: aws-actions/configure-aws-credentials@v3
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: arn:aws:iam::<YOUR_ACCOUNT_ID>:role/github-actions-deploy-role
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Login to Amazon ECR
+      - name: 🔐 Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build, Tag, and Push Docker Image
+      - name: 🐳 Build, Tag, and Push Docker Image
         id: build-image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          echo "🛠 Building Docker image for Gopi Portfolio..."
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
-          echo "📤 Pushing image to ECR..."
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+          docker build -t $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG
+          echo "image=$ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
-      - name: Render New Task Definition with Image
-        id: task-def
-        uses: aws-actions/amazon-ecs-render-task-definition@v1
+      - name: 🧩 Render new ECS Task Definition
+        id: render-task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v2
         with:
           task-definition: ${{ env.ECS_TASK_DEFINITION }}
           container-name: ${{ env.CONTAINER_NAME }}
           image: ${{ steps.build-image.outputs.image }}
 
-      - name: Deploy to Amazon ECS
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+      - name: 🚀 Deploy updated Task Definition to ECS
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
         with:
-          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          task-definition: ${{ steps.render-task-def.outputs.task-definition }}
           service: ${{ env.ECS_SERVICE }}
           cluster: ${{ env.ECS_CLUSTER }}
           wait-for-service-stability: true
