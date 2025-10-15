@@ -94,3 +94,6 @@ If you have feedback, suggestions, or collaboration ideas, reach out at:
 
 ## 📄 License
 This project is open-source under the MIT License.
+git add .
+git commit -m "Trigger ECS deploy workflow"
+git push
