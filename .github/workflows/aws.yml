@@ -1,44 +1,40 @@
-name: 🚀 Deploy Portfolio to AWS ECS
+name: 🚀 Deploy Portfolio to Amazon ECS
 
 on:
   push:
-    branches:
-      - main
-      - master
+    branches: [ main, master ]
 
 permissions:
   contents: read
-  id-token: write   # Required for GitHub OIDC auth with AWS
+  id-token: write
 
 env:
-  AWS_REGION: ap-south-1                   # 🔹 your AWS region
-  ECR_REPOSITORY: gopi-portfolio           # 🔹 your ECR repository name
-  ECS_CLUSTER: gopi-portfolio-cluster      # 🔹 your ECS cluster name
-  ECS_SERVICE: gopi-portfolio-service      # 🔹 your ECS service name
-  ECS_TASK_DEFINITION: .aws/task-definition.json  # 🔹 task definition file path
-  CONTAINER_NAME: gopi-portfolio-container # 🔹 container name in task definition
+  AWS_REGION: ap-south-1
+  ECR_REPOSITORY: gopi-portfolio
+  ECS_CLUSTER: gopi-portfolio-cluster
+  ECS_SERVICE: gopi-portfolio-service
+  ECS_TASK_DEFINITION: .aws/task-definition.json
+  CONTAINER_NAME: gopi-portfolio-container
 
 jobs:
   deploy:
-    name: Deploy to Amazon ECS
     runs-on: ubuntu-latest
-    environment: production
-
     steps:
-      - name: 🧭 Checkout repository
+      - name: 🧭 Checkout code
         uses: actions/checkout@v4
 
-      - name: ⚙️ Configure AWS Credentials (v3)
+      - name: ⚙️ Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v3
         with:
-          role-to-assume: arn:aws:iam::<YOUR_ACCOUNT_ID>:role/github-actions-deploy-role
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: 🔐 Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: 🐳 Build, Tag, and Push Docker Image
+      - name: 🐳 Build and push Docker image
         id: build-image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
@@ -48,8 +44,7 @@ jobs:
           docker push $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG
           echo "image=$ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
-      # ⚠️ ECS Actions only support v1 currently — this is the correct version
-      - name: 🧩 Render new ECS Task Definition
+      - name: 🧩 Render ECS task definition
         id: render-task-def
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
@@ -57,7 +52,7 @@ jobs:
           container-name: ${{ env.CONTAINER_NAME }}
           image: ${{ steps.build-image.outputs.image }}
 
-      - name: 🚀 Deploy updated Task Definition to ECS
+      - name: 🚀 Deploy to ECS
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
           task-definition: ${{ steps.render-task-def.outputs.task-definition }}
