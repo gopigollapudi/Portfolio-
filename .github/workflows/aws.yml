@@ -8,15 +8,15 @@ on:
 
 permissions:
   contents: read
-  id-token: write   # required for OpenID Connect authentication with AWS
+  id-token: write   # Required for GitHub OIDC auth with AWS
 
 env:
   AWS_REGION: ap-south-1                   # 🔹 your AWS region
   ECR_REPOSITORY: gopi-portfolio           # 🔹 your ECR repository name
   ECS_CLUSTER: gopi-portfolio-cluster      # 🔹 your ECS cluster name
   ECS_SERVICE: gopi-portfolio-service      # 🔹 your ECS service name
-  ECS_TASK_DEFINITION: .aws/task-definition.json  # 🔹 path to task definition file
-  CONTAINER_NAME: gopi-portfolio-container # 🔹 container name from task definition
+  ECS_TASK_DEFINITION: .aws/task-definition.json  # 🔹 task definition file path
+  CONTAINER_NAME: gopi-portfolio-container # 🔹 container name in task definition
 
 jobs:
   deploy:
@@ -48,16 +48,17 @@ jobs:
           docker push $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG
           echo "image=$ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
+      # ⚠️ ECS Actions only support v1 currently — this is the correct version
       - name: 🧩 Render new ECS Task Definition
         id: render-task-def
-        uses: aws-actions/amazon-ecs-render-task-definition@v2
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
           task-definition: ${{ env.ECS_TASK_DEFINITION }}
           container-name: ${{ env.CONTAINER_NAME }}
           image: ${{ steps.build-image.outputs.image }}
 
       - name: 🚀 Deploy updated Task Definition to ECS
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
           task-definition: ${{ steps.render-task-def.outputs.task-definition }}
           service: ${{ env.ECS_SERVICE }}
