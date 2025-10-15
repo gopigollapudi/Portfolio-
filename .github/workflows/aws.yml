@@ -30,12 +30,12 @@ jobs:
         uses: actions/checkout@v4
 
       # ⚙️ Step 2: Configure AWS credentials (using Secrets from GitHub)
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v3
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
+     - name: Configure AWS credentials
+  uses: aws-actions/configure-aws-credentials@v3
+  with:
+    aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+    aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    aws-region: ${{ env.AWS_REGION }}
 
       # 🔐 Step 3: Login to Amazon ECR
       - name: Login to Amazon ECR
@@ -46,6 +46,12 @@ jobs:
       - name: Build, tag, and push Docker image
         id: build-image
         env:
+        - name: Configure AWS credentials via OIDC
+  uses: aws-actions/configure-aws-credentials@v3
+  with:
+    role-to-assume: arn:aws:iam::<YOUR_AWS_ACCOUNT_ID>:role/<YOUR_GITHUB_ROLE_NAME>
+    aws-region: ap-south-1
+
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
